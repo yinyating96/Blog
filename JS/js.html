@@ -5,7 +5,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
-<body>
-    <script src="./高级面试题.js"></script>
+<body>  
+    <button id="debounce">节流</button>
+    <br/>
+    <br/>
+    <button id="throttle-timestamp">防抖-时间戳</button>
+    <br/>
+    <br/>
+    <button id="throttle-timer">防抖-定时器</button>
+    <br/>
+    <br/>
 </body>
+<script src="./高级面试题.js"></script>
+<script>
+    let debounceBtn = document.getElementById('debounce');
+    debounceBtn.addEventListener('click', 
+        debounce( ()=>{
+            console.log('节流按钮被点击了');
+            // alert('节流按钮被点击了');
+        }, 2000)
+    )
+    let throttleTimestampBtn = document.getElementById('throttle-timestamp');
+    throttleTimestampBtn.addEventListener('click',
+        throttle(()=>{
+            console.log('防抖-时间戳按钮被点击');
+            // alert('防抖-时间戳按钮被点击了');
+        }, 2000)
+    )
+    let throttleTimerBtn = document.getElementById('throttle-timer');
+    throttleTimerBtn.addEventListener('click', 
+        throttleFunc( ()=>{
+            console.log('防抖-定时器按钮被点击了');
+            // alert('防抖-定时器按钮被点击了');
+        }, 2000)
+    )
+</script>
 </html>

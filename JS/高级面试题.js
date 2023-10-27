@@ -42,16 +42,16 @@ function accAdd(arg1, arg2){
 // 2.详细说明Event Loop
 
 // 2.1 输出下面在浏览器中的日志顺序
-console.Log('script start');
-setTimeout (function(){
+console.log('script start');
+window.setTimeout(function(){
     console.log('setTimeout');
 },0);
-console.Log('script end');
+console.log('script end');
 // script start -> script end ->  setTimeout
 
 // 2.2 输出下面在浏览器中的日志顺序
 console.log('script start');
-setTimeout(function(){
+window.setTimeout(function(){
     console.log('setTimeout')
 },0)
 new Promise((resolve)=>{
@@ -60,36 +60,34 @@ new Promise((resolve)=>{
 }).then(function(){
     console.log('promise1');
 }).then(function(){
-    console.Log('promise2');
+    console.log('promise2');
 });
 console.log('script end');
 // script start => Promise => script end => promise1 => promise2 => setTimeout
 
-// 2.3 输出下面在Node.js中的日志顺序
-setTimeout(()=>{
-    console.log('setTimeout');
-},0);
-setImmediate(()=>{
-    console.log('setImmediate');
-})
+// // 2.3 输出下面在Node.js中的日志顺序
+// setTimeout(()=>{
+//     console.log('setTimeout');
+// },0);
+// setImmediate(()=>{
+//     console.log('setImmediate');
+// })
 /**
  * 这里可能会输出setTimeout,setImmediate,可能也会相反的输出，
  * 这取决于性能,因为可能进入 event loop 用了不到1毫秒，
  * 这时候会执行setImmediate,否则会执行setTimeout.
  */
 
-// 2.4 输出下面在Node.js中的日志顺序
-var fs = require('fs');
-const { resolve } = require('path');
-const { setTimeout } = require('timers/promises');
-fs.readFile(_filename,()=>{
-    setTimeout(()=> {
-        console.log('timeout');
-    },0);
-    setImmediate(()=>{
-        console.log('immediate');
-    });
-});
+// // 2.4 输出下面在Node.js中的日志顺序
+// var fs = require('fs');
+// fs.readFile(_filename,()=>{
+//     setTimeout(()=> {
+//         console.log('timeout');
+//     },0);
+//     setImmediate(()=>{
+//         console.log('immediate');
+//     });
+// });
 /**
  * 因为readFile的回调在poll中执行
  * 发现有setImmediate,所以会立即跳到check阶段执行回调
@@ -97,26 +95,26 @@ fs.readFile(_filename,()=>{
  * 所以以上输出一定是 immediate, timeout
  */
 
-// 2.5 输出下面在Node.js中的日志顺序
-setTimeout(()=>{
-    console.log("timer1");
-    Promise.resolve().then(function(){
-        console.log("promise1");
-    });
-},0);
-process.nextTick(()=>{
-    console.log("nextTick");
-});
+// // 2.5 输出下面在Node.js中的日志顺序
+// window.setTimeout(()=>{
+//     console.log("timer1");
+//     Promise.resolve().then(function(){
+//         console.log("promise1");
+//     });
+// },0);
+// process.nextTick(()=>{
+//     console.log("nextTick");
+// });
 // nextTick,timer1,promise
 
 // 2.6 输出下面在浏览器中和Node.js中的日志顺序
-setTimeout(()=>{
+window.setTimeout(()=>{
     console.log('timer1')
     Promise.resolve().then(function(){
         console.log('promise1')
     })
 },0)
-setTimeout(()=>{
+window.setTimeout(()=>{
     console.log('timer2')
     Promise.resolve().then(function(){
         console.log('promise2')
@@ -144,7 +142,7 @@ for (var i=0; i<10; i++){
 for (var i=0; i<10; i++){
     (function(i){
         setTimeout(function(){
-            console.log(i);
+            console.log(i, '6-1 闭包');
         });
     })(i)
 }
@@ -152,7 +150,7 @@ for (var i=0; i<10; i++){
 // 方案二 让每次循环的代码块都能正常的拿到i值即可
 var output = function(i){
     setTimeout(function(){
-        console.log(i);
+        console.log(i, '6-2 让每次循环的代码块都能正常的拿到i值');
     },1000);
 }
 for (var i=0; i<10; i++){
@@ -162,7 +160,7 @@ for (var i=0; i<10; i++){
 // 方案三 ES6的let
 for (let i=0; i<10; i++){
     setTimeout(function(){
-        console.log(i);
+        console.log(i, '6-3 ES6的let');
     },1000);
 }
 
@@ -172,7 +170,7 @@ for (var i = 0; i < 10; i++) {
     (function(i) {
         tasks.push(new Promise(resolve=>{
             setTimeout(()=>{
-                console.log(i);
+                console.log(i, ' 6-4-1 Promise');
                 resolve();
             })
         }))
@@ -187,18 +185,18 @@ Promise.all(tasks).then(()=>{
 
 // 方案四 Promise 简洁版
 const jobs = [];
-const output = (i) =new Promise(resolve=>{
-    setTimeout(()=>{
-        console.log(i)
+const outputFunc = (i) => new Promise(resolve =>{
+    setTimeout(()=> {
+        console.log(i, '6-4-2 Promise 简洁版');
         resolve();
     }, 500)
 })
 
 for (var i = 0; i < 10; i++) {
-    jobs.push(output(i));
+    jobs.push(outputFunc(i));
 }
 
-Promise.all(tasks).then(()=>{
+Promise.all(jobs).then(()=>{
     setTimeout(()=>{
         console.log('简洁依次顺序执行之后i数值变为:', i)
     })
@@ -207,34 +205,35 @@ Promise.all(tasks).then(()=>{
 // 方案四 Promise 最简洁版
 new Promise( resolve => {
     for (var i = 0; i < 10; i++) {
-        console.log(i);
+        console.log(i, '6-4-3 Promise 最简洁版!');
         resolve();   
     }
 })
 
-// 方案五 async/await
-const sleep = (timeout) =new Promise(resolve=>{
-    setTimeout(resolve, timeout);
-})
+// // 方案五 async/await
+// const sleep = (timeout) => new Promise((resolve) =>{
+//     setTimeout(resolve, timeout);
+// })
 
-(async () => {
-    for (var i = 0; i < 10; i++) {
-        await sleep(300);
-        console.log(i);
-    }
-})()
+// (async () => {
+//     for (var i = 0; i < 10; i++) {
+//         await sleep(1000);      // 这个浏览器也不支持打印，应该是还没支持await写法
+//         console.log(i, '6-5-1 async/await');
+//     }
+// })()
 
-// 方案五 async/await 简介版
-(async () => {
-    for (var i = 0; i < 10; i++) {
-        console.log(i);
-    }
-})
+// // 方案五 async/await 简洁版
+// (async () => {  // 不注释两个都不打印，注释方案5报错初步猜测是由于async的写法
+//     for (var i = 0; i < 10; i++) {
+//         console.log(i, '6-5-2 async/await 简洁版');
+//     }
+// })()
 
 // 7.防抖和节流
 
 // 防抖
 function debounce(func, delay){
+    console.log('debounce');
     var timeout;
     return function () {
         var context = this;
@@ -245,22 +244,26 @@ function debounce(func, delay){
         }, delay)
     }
 }
+// 验证
 
 // 节流 实践戳方式实现
 function throttle(func, delay){
+    console.log('throttle');
     var context, args;
     var previous = 0;
     return function(){
-        var now = +new Date();
+        var now = +new Date().getTime();
         context = this;
         args = arguments;
         if (now - previous > delay) {
             func.apply(context, args);
+            previous = now;
         }
     }
 }
 // 节流 定时器方式实现
 const throttleFunc = (func, delay) => {
+    console.log('throttleFunc');
     var timeout, context, args;
     return function () {
         context = this;
@@ -273,6 +276,8 @@ const throttleFunc = (func, delay) => {
         }
     }
 }
+// 验证
+
 
 // 8.JavaScript中的设计模式
 
@@ -312,7 +317,7 @@ class Link {
     }
     insert(where){
         const a = document.createElement('a');
-        a.src = this.url;
+        a.href = this.url;
         const txt = document.createTextNode(this.url);
         a.appendChild(txt);
         where.appendChild(a);
@@ -332,8 +337,7 @@ class Image{
 // DOM工厂
 class DomFactory {
     constructor(type){
-        this.type = type;
-        return new (this.type())
+        return new (this[type]())
     }
     link() { return Link }
     text() { return Text }
@@ -343,12 +347,13 @@ class DomFactory {
 const textFactiry = new DomFactory('text')
 const linkFactory = new DomFactory('link')
 const imgFactory = new DomFactory('image')
-textFactiry.text = 'Hi, I am Lily!';
+textFactiry.text = 'Hi, I am Lily! \n';
 textFactiry.insert(document.body);
-linkFactory.url = 'https://www.runoob.com/js/js-tutorial.html';
-linkFactory.insert(document.body);
 imgFactory.url = 'https://www.runoob.com/wp-content/uploads/2013/07/js-logo.png';
 imgFactory.insert(document.body);
+linkFactory.url = 'https://www.runoob.com/js/js-tutorial.html';
+linkFactory.insert(document.body);
+
 
 // 9.数据结构与算法题
 
@@ -370,7 +375,7 @@ const strChar = (str) => {
 }
 // 验证
 const maxStr = strChar(str)
-console.log(`字符串 ${str} 中出现次数最多的字符是：`, maxStr)；
+console.log(`字符串 ${str} 中出现次数最多的字符是：`, maxStr);
 
 // 数组去重
 // forEach
@@ -390,7 +395,7 @@ const uniqueFilter = arr =>{
 }
 //set 
 const uniqueSet = arr => {
-    return [...newSet(arr)];
+    return [...new Set(arr)];
 }
 // 验证
 const forEachResult = uniqueForEach(arr);

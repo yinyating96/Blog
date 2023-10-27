@@ -49,11 +49,11 @@ function accAdd(arg1, arg2){
 JS在执行的过程中会产生执行环境，这些执行环境会被顺序的加入到执行栈中。如果遇到异步的代码，会被挂起并加入到`Task`(有多种task)队列中。一旦执行栈为空，`Event Loop`就会从`Task`队列中拿出需要执行的代码并放入执行栈中执行，所以本质上来说JS中的异步还是同步行为。
 
 ```js
-console.Log('script start');
+console.log('script start');
 setTimeout (function(){
     console.log('setTimeout');
 },0);
-console.Log('script end');
+console.log('script end');
 
 // script start -> script end ->  setTimeout
 ```
@@ -72,7 +72,7 @@ new Promise((resolve)=>{
 }).then(function(){
     console.log('promise1');
 }).then(function(){
-    console.Log('promise2');
+    console.log('promise2');
 });
 console.log('script end');
 
@@ -164,13 +164,13 @@ setTimeout(()=>{
 
 `Node`中的`process.nextTick`会先于其他`microtask`执行。
 ```js
-setTimeout(()=>
+setTimeout(()=>{
     console.log("timer1");
     Promise.resolve().then(function(){
         console.log("promise1");
     });
 },0);
-process.nextTick(()=>
+process.nextTick(()=>{
     console.log("nextTick");
 });
 // nextTick,timer1,promise1
