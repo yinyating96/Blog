@@ -623,3 +623,444 @@ const unique = arr => {
     return [...new Set(arr)];
 }
 ```
+
+## 10.作用域
+作用域是可访问变量的集合，在JavaScript中对象和函数同样是变量，作用域为可访问变量，对象，函数的集合。作用域可以分为全局作用域和局部作用域。   
+全局作用域：变量在函数外定义，即为全局变量，全局变量有全局作用域，网页中所有脚本和函数都可以使用。如果变量在函数内没有声明，也是全局变量。  
+```js
+var name = "hello World";
+// 此处可调用name变量
+function myFunction(){
+    //函数内可调用name变量
+}
+``` 
+```js
+//此处可调用name变量
+function myFunction(){
+    name = "hello World";
+    //此处可调用name变量
+}
+``` 
+局部作用域：变量在函数内声明，变量为局部作用域，只能在函数内部访问。
+```js
+//此处不能调用name变量
+function myFunction(){
+    var name = "hello World";
+    //函数内可调用name变量
+}
+```
+
+局部变量只作用于函数内，所以不同的函数可以使用相同名称的变量。局部变量在函数执行时创建，函数执行完毕后局部变量就会自动销毁。
+
+JavaScript变量生命周期，局部变量函数执行完毕后销毁，全局变量在页面关闭后销毁。函数参数只在函数内起作用，属于局部变量。
+
+## 11.闭包
+**闭包**：函数A内部有函数B,函数B可以访问函数A的变量，那么函数B就是闭包。本质上，闭包就是将函数内部和函数外部连接起来的一座桥梁。
+```js
+function A(){
+    var a = 123;
+    function B(){
+        console.log(a)//123
+    }
+    return B()
+}
+A()();
+```
+#### 闭包有3大特性：
+- 函数嵌套函数
+- 函数内部可以引用函数外部的参数和变量
+- 参数和变量不会被垃圾回收机制回收
+#### 闭包优点：
+1.可读取函数内部的变量  
+2.局部变量可以保存在内存中，实现数据共享  
+3.执行过程所有变量都匿名在函数内部  
+### 闭包缺点：
+1.使函数内部变量存在内存中，内存消耗大  
+2.滥用闭包可能会导致内存泄漏  
+3.闭包可以在父函数外部改变父函数内部的值，慎操作  
+#### 使用场景：
+1.模拟私有方法  
+2.setTimeout的循环  
+3.匿名自执行函数  
+4.结果要缓存场景  
+5.实现类和继承  
+
+## 12.this指向
+this是在函数运行时，在函数体内部自动生成的一个对象，只能在函数体内部使用。通过捣鼓这么多代码，无非就是几种情况，在不同的环境下会有不同的值。发现网上很多关于this的文章都会让人觉得很难以理解，讲解一大堆例子但是没有讲到点上。  
+首先我们来看一下代码
+```js
+var a = 1;
+function foo(){
+    console.log(this.a);
+}
+foo();
+
+const obj = {
+    a:2,
+    foo:foo
+}
+obj.foo();
+
+const c = new foo();
+```
+- 对于直接调用函数来说，不管foo函数被放在了什么地方，this的指向一定window  
+- 对于obj.foo()来说，谁调用了函数那么谁就是this
+- 对于new操作实例化来说，this就会绑定在实例化对象上面且不会被改变
+- 箭头函数this只取决于包裹箭头函数的第一个普通函数的this  
+
+**PS**:箭头函数是没有this的，只会从自己的作用域链的上一层继承this。箭头函数的this在它被定义的时候就确定了，之后永远不会改变。
+
+![Alt text](this_image.png)
+
+## 13.跨域怎么解决
+跨域解决主要有以下几种：  
+* JSONP
+* CORS
+* Nginx代理
+* document.domain
+* window.name
+* postMessage + iframe
+#### 1. JSONP
+我们知道写HTML代码的时候，加入图片链接就不会有获取不到图片的问题。这是因为图片资源并没有进行ajax请求，而且script标签是没有同源策略的，可以进行资源请求，可以说是一个前端设计的漏洞。
+```js
+//1.回调函数
+function handleResponse(data){
+    console.log(data);
+}
+//2.动态创建script
+var script = document.createElement('script');
+script.src = 'http://test.com/json?callback=handleResponse';
+document.body.insertBefore(script,document.body.firstChild);
+```
+利用script标签立即下载并执行的特性，我们就可以在回调函数中拿到返回来的数据。那么是不是所有的情况都可以呢？显然不是的。虽然实现是比较简单的操作，但是有缺点：  
+1. 仅限于`GET`请求
+2. 有安全问题，万一有恶意代码返回，前端无法阻止
+3. 无法检测请求是否成功
+#### 2.CORS
+`CORS`是跨域资源共享(`Cross-origin resource sharing`)  
+要想利用这个技术关键是在于服务端，设置返回的`Access-Control-Allow-Origin`响应头允许跨域操作，发送请求时有两种情况：
+- 简单请求
+- 复杂请求
+##### ①简单请求
+当使用以下方法之一：
+* GET
+* HEAD
+* POST
+`Content-Type`的值为以下之一：
+- text/plain
+- multipart/form-data
+- application/x-www-form-urlencoded
+
+才会发起简单请求，浏览器判断是简单请求的话就会在请求头添加`origin`字段，值是发起请求的所在的源。服务端收到请求后会判断origin是否在自己的许可范围，如果不在就拒绝，如果在就会有以下的响应头添加：  
+* `Access-Control-Allow-Origin`(必选)：告诉客户端我接受请求，值为`origin`的值，若允许所有源请求就会返回*。
+* `Access-Control-Allow-Credentials`(可选)：告诉浏览器发送请求时携带`Cookie`,`true`表示允许`false`表示禁止。
+* `Access-Control-Expose-Headers`(可选)：额外给客户端返回的头部字段。
+##### ②复杂请求
+复杂请求会有两次，第一次是发送一个预检请求，使用的方法是`options`,询问服务器是否允许我进行跨域请求资源。并且允许客户端自定义请求头的类型，询问服务器是否允许。
+```
+OPTIONS /cors HTTP/1.1
+Origin: http://test.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: Custom-Header1, Custom-Header2
+Host: target.com
+Accept-Language: en-US
+Connection: keep-alive
+User-Agent: Mozilla/5.0...
+```
+然后服务器会进行验证，还会在响应头进行说明允许你的请求。
+```
+HTTP/1.1 200 0K
+Date: Mon, 01 Dec 2008 01:15:39 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://test.com
+Access-Control-ALLow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: Custom-Header1, Custom-Header2
+Access-Control-Max-Age: 1728000
+Content-type: text/html; charset=utf-8
+Content-Encoding: gzip
+Content-Length: 0
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain
+```
+
+* Access-Control-Allow-Origin: 告诉客户端，允许你这个源的请求
+* Access-Control-Alow-Methods: 告诉客户端，服务端允许的跨域AJAX请求的类型，也可进行GET或者POST请求
+* Access-Control-Allow-Headers: 告诉客户端，服务端允许的发送请求时的自定义请求头
+* Access-Control-Max-Age: 告诉客户端预检请求的有效期，省去了多次的预检求。
+也就是说，1728000秒内你可以直接发送真正的AJAX请求，不用每次询问
+#### 3. Nginx代理
+将nginx目录下的nginx.conf修改，通过反向代理的方式来实现跨域请求。
+```
+# //所有以apis开头发起的请求会被分发到myserver
+location ^/apis/{   
+    proxy_pass http://myserver; #负载均衡名，写你请求的服务器地址
+    proxy_set_header X-real-ip $remote_addr;
+    proxy_set_header Host $http_host;
+```
+#### 4. document.domain
+该方式只能用于二级域名相同的情况下，比如`a.test.com`和`b.test.com`适用于该方式。
+只需要给页面添加`document.domain='test.com'`表示二级域名都相同就可以实现跨域
+#### 5. window.name
+`window.name`有一个奇妙的性质，页面如果设置了`window.name`,那么在不关闭页面的情况下，即使进行了页面跳转`location.href=..`,这个`window.name`还是会保留。
+```
+//打开必应 https://www.bing.com/
+//打开控制台
+window.name
+// ""
+window.name='test';
+// "test"
+location.href='http://www.google.com';
+// "http://www.google.com"
+Navigated to https://www.google.com/ > window.name
+// "test"
+
+// 自己的实验并不是这样的window.name 是 ""  why？？？？？
+```
+
+#### 6. postMessage + iframe
+这种方式通常用于获取嵌入页面中的第三方页面数据。一个页面发送消息，另一个页面判断来源并接收消息
+```js
+//发送消息端
+<div>
+    <div id="color">Frame Color</div>
+</div>
+<div>
+    <iframe id="child"src="http://b.com/b.html"></iframe>
+</div>
+
+window.onload=function(){
+    window.frames[0].postMessage('getcolor','http://b.com');
+}
+//接收消息端
+window.addEventListener('message', function(e){
+    console.log(e)
+}, false);
+
+// 这个我有具体案例，欧洲落地页和少杰老师配合的那个自研落地页
+```
+`postMessage(data,origin)`方法接受两个参数：
+- data: 要传递的数据，`html5`规范中提到该参数可以是`JavaScript`的任意基本类型或可复制的对象，然而并不是所有浏览器都做到了这点儿，部分浏览器只能处理字符串参数，所以我们在传递参数的时候需要使用`JSON.stringify()`方法对对象参数序列化
+- oigin: 字符串参数，指明目标窗口的源，协议+主机+端口号[+`URL`],`URL`会被忽略，所以可以不写，这个参数是为了安全考虑，`postMessage()`方法只会将`message`传递给指定窗口，当然如果愿意也可以把参数设置为"`*`"，这样可以传递给任意窗口，如果要指定和当前窗口同源的话设置为"/"。
+
+## 14. Vue过滤器原理
+过滤器实质不改变原始数据，只是对数据进行加工处理后返回过滤后的数据再进行调用处理。我们看一下官方的定义：
+> Vue.js允许你自定义过滤器，可被用于一些常见的文本格式化。过滤器可以用在两个地方：双花括号插值和`v-bind`表达式(后者从2.1.0+开始支持)。过滤器应该被添加在`JavaScript`表达式的尾部，由“管道”符号指示：
+```js
+<！-在双花括号中-->
+{{ message | capitalize }}
+<!-- 在`v-bind`中->
+<div v-bind:id="rawId | formatId"></div>
+```
+你可以在一个组件的选项中定义本地的过滤器：
+```js
+filters: {
+    capitalize: function (value){
+        if (!value) return '';
+        value = value.tostring();
+        return value.charAt(0).toUpperCase() + value.slice(1);
+    }
+}
+```
+或者在创建Vue实例之前全局定义过滤器：
+```js
+Vue.filter('capitalize',function (value){
+    if (!value) return '';
+    value = value.tostring();
+    return value.charAt(0).toUppercase() + value.slice(1);
+})
+
+new Vue({
+    // ...
+})
+```
+过滤器函数总接收表达式的值（之前的操作链的结果）作为第一个参数。在上述例子中，capitalize过滤器函数将会收到message的值作为第一个参数。过滤器可以串联：
+```js
+{{ message | filterA | filterB }}
+```
+在这个例子中，`filterA`被定义为接收单个参数的过滤器函数，表达式`message`的值将作为参数传入到函数中。然后继续调用同样被定义为接收单个参数的过滤器函数`filterB`,将`filterA`的结果传递到`filterB`中。 
+
+过滤器是`JavaScript`函数，因此可以接收参数：
+```
+{{ message | filterA('arg1', arg2) }}
+```
+这里，`filterA`被定义为接收三个参数的过滤器函数。其中`message`的值作为第一个参数，普通字符串`'arg1'`作为第二个参数，表达式`arg2`的值作为第三个参数。
+#### 过滤器原理
+```js
+{{ message | capitalize }}
+```
+上面的过滤器经过一顿操作之后就会变成：`_s(_f("capitalize")(message))`。
+* `_f`: 该函数其实就是`resolveFilter`的别名，作用是从`_this.$options.filter`找到过滤器并返回
+* `_s`: 该函数就是`toString`函数的别名，作用是拿到过滤之后的结果并传递给`toString()`函数，结果会保存到`VNode`中的`text`属性，返回结果直接渲染视图
+#### 串联过滤器
+```js
+{{ message | filterA |filterB }}
+```
+上面的串联过滤器经过一顿操作之后就会变成：  
+> `_s(_f("filterB")(_f("filterA")(message)))`
+
+这里的意思就是`message`作为第一个参数传进`filterA`当中，然后经过`filterA`的处理结果就传进`filterB`当中。 `即`filterA`过滤器的结果就是`filterB`过滤器的输入。`
+#### 过滤器参数接收
+```js
+{{ message | filterA | filterB("param") }}
+```
+以上的过滤器的编译结果就是：
+`_s(_f("filterB")(_f("filterA")(message),"param"))`  
+这里有一点注意的是：这个`param`参数是`filterB`的第二个参数，它的第一个参数是经过`filterA`处理的结果。
+#### _f函数的原理
+`_f`函数其实就是寻找过滤器的，如果找到过滤器就返回过滤器，找不到就返回与参数相同的值。它的代码其实很简单：
+```js
+import { identity, resolveAssets } from 'core/util/index'
+export function resolveFilter(id){
+    return resolveAssets(this.$options, 'filters' , id, true) || identity
+}
+```
+我们重点来看一下`resolveAssets`到底做了什么事情。
+```js
+export function resolveAsset(options, type, id, warnMissing){
+    if(typeof(id)!=='string'){
+        return
+    }
+    const assets = options[type]
+    if(hasown(assets, id)) return assets[id]
+    const camelizedId = camelize(id)
+    if(hasown(assets, camelizedId)) return assets[camelizedId]
+    const PascalcaseId = capitlize(camelizedId)
+    if(hasown(assets, PascalCaseId)) return assets[PascalcaseId]
+    
+    //检查原型链
+    const res = assets[id] || assets[camelizedId] || PascalcaseId
+    if(process.env.NODE_ENV !== 'production' && warnMissing && !res){
+        warn('Fail to resolve' + type.slice(0,-1) + ':' + id,options)
+    }
+    return res
+}
+```
+
+其实它的寻找过程也很简单，主要是做了以下的操作(`id`是过滤器`id`):
+- 判断过滤器`d`是否为字符串，不是则终止
+- 用assets存储过滤器
+- `hasOwn`函数检查`assets`自身是否存在`id`属性，存在则返回
+- `hasOwn`函数检查`assets`自身是否存在驼峰化后的`id`属性，存在则返回
+- `hasOwn`函数检查`assets`自身是否存在将首字母大写后的`id`属性，存在则返回
+- 如果还是没有，就是去原型链找，找不到就会打印警告
+
+#### 过滤器解析原理
+我们想一下，解析器是怎么解析过滤器的语法？其实在Vu内部专内有这么一个函数用来
+解析过滤器语法：`parseFilters`
+它的原理就是解析过滤器列表，然后`循环过滤器列表`并`拼接字符串`。
+## 15.vue中的路由模式
+### history模式
+- HTML5中的两个API:`pushState`和`replaceState`,改变`url`之后页面不会重新刷新，也不会带有`#`号，页面地址美观，`url`的改变会触发`popState`事件，监听该事件也可以实现根据不同的`url`渲染对应的页面内容但是因为没有`#`会导致用户在刷新页面的时候，还会发送请求到服务端，为避免这种情况，需要每次`url`改变的时候，都将所有的路由重新定位到跟路由下
+### hash模式
+url hash: `http:foo.com/#help#` 后面`hash`值的改变，并不会重新加载页面，同时`hash`值的变化会触发`hashchange`事件，该事件可以监听，可根据不同的哈希值渲染不同
+
+## 16.vue3.0中proxy数据双向绑定
+- `Proxy`可以直接监听对象而非属性；
+- `Proxy`可以直接监听数组的变化；
+- `Proxy`有多达`13`种拦截方法，不限于`apply`、`ownKeys`、`deleteProperty`、`has`等等是`Object.defineProperty`不具备的；
+- `Proxy`返回的是一个新对象，我们可以只操作新的对象达到目的，而
+`Object.defineProperty`只能遍历对象属性直接修改；
+- `Proxy`作为新标准将受到浏览器厂商重点持续的性能优化，也就是传说中的新标准的性能红利；
+
+## 17.ajax/axios/fetch区别
+`ajax`
+- 不符合现在前端MVVM的浪潮
+- 基于原生的XHR开发，XHR本身的架构不清晰
+- jQuery整个项目太大，单纯使用ajax却要引入整个jQuery  
+`axios`
+- 从node.js创建http请求
+- 支持Promise API
+- 客户端支持防止CSRF
+- 提供了一些并发请求的接口
+`fetch`
+- 更加底层，提供的API丰富(request,response)
+- 脱离了XHR,是ES规范里新的实现方式
+- fetch只对网络请求报错，对400,500都当做成功的请求，需要封装去处理
+- fetch默认不会带cookie,需要添加配置项
+- fetch没有办法原生监测请求的进度，而XHR可以
+
+## 18.webSocket通信原理
+- 客户端会先发送一个`HTTP`请求，包含一个`Upgrade`请求头来告诉服务端要升级为`WebSocket`协议
+- 服务器就会返回`101`状态码并切换为`WebSocket`协议建立全双工连接，后续信息将会通过这个协议进行传输  
+
+有几个头信息需要注意一下：
+`Sec-WebSocket-Key`: 客户端随机生成的一个`base64`编码
+`Sec-WebSocket-Accept`: 服务端经过算法处理后回传给客户端
+`Connection`和`Upgrade`字段告诉服务器，客户端发起的是`WebSocket`协议请求
+
+## 19.如何优化webpack配置
+#### 缩小文件查找范围
+- 优化`loader`
+- 优化`resolve.modules`
+- 优化`resolve.mainFields`
+- 优化`resolve.alias`
+- 优化`resolve.extensions`
+- 优化`module.noPaese`
+#### 使用DlIPlugin
+- 基础模块抽离，打包到动态链接库
+- 需要使用模块，直接去动态链接库查找
+#### 使用HappyPack
+- 单线程变多进程
+#### 使用ParallelUglifyPlugin
+- 开后多进程压缩代码，并行执行
+#### 使用CDN加速
+- 静态资源放到CDN服务器上面
+#### Tree Shaking
+- 剔除无用的代码
+#### 提取公共代码
+- 防止相同资源重复加载
+- 减少网络流量及服务器成本
+#### 使用prepack
+- 编译代码时提前计算结果放到编译后的结果中，而不是在代码运行才求值
+
+## 20.V8垃圾回收机制
+### 新生代
+新生代中的对象主要通过`Scavenge`算法进行垃圾回收。在`Scavenge`的具体实现中，主要采用了`Cheney`算法。
+> `Cheney`算法是一种采用复制的方式实现的垃圾回收算法。它将堆内存一分为二，每一部分空间成为`semispace`。在这两个`semispace`空间中，只有一个处于使用中，另一个处于闲置中。处于使用中的`semispace`空间成为`From`空间，处于闲置状态的空间成为`To`空间。当我们分配对象时，先是在`From`空间中进行分配。当开始进行垃圾回收时，会检查`From`空间中的存活对象，这些存活对象将被复制到`To`空间中，而非存活对象占用的空间将被释放。完成复制后，`From`空间和`To`空间的角色发生对换。
+
+`Scavenge`的缺点是只能使用堆内存的一半，但`Scavenge`由于只复制存活的对象，并且对于生命周期短的场景存活对象只占少部分，所以它在时间效率上表现优异。`Scavenge`是典型的牺牲空间换取时间的算法，无法大规模地应用到所有的垃圾回收中，但非常适合应用在新生代中。
+
+![Alt text](scavenge_image.png)
+
+### 对象是如何释放的呢？
+有个叫可达性分析算法的概念，即通过一系列的称为`“GC ROOT”`的对象作为起始点。从这些节点开始向下搜索。搜索走过的路径称为引用链。当一个对象到`GC ROOT`没有任何引用链时，则证明此对象是不可用的。当然在虚拟机判断要被释放的对象里面，即使在可达性分析算法中不可达的对象，也并非是立即释放的。如果对象在进行可达性分析后发现没有与`GC ROOTS`相连接的引用链。将会对它进行一次标记，并进行刷选。它会放进一个队列中依次进行回收。如果这时又有对象引用到它，它就不会被回收。
+### 晋升
+对象从新生代中移动到老生代中的过程称为晋升。   
+`From`空间中的存活对象在复制到`To`空间之前需要进行检查，在一定条件下，需要将存活周期长的对象移动到老生代中，也就是完成对象的晋升。  
+晋升条件主要有两个：  
+- 对象是否经历过一次`Scavenge`回收，是的话，则移动到老生代
+- `To`空间已经使用超过`25%`，`To`空间对象移动到老生代设置`25%`这个限制值得原因是当这次`Scavenge`回收完成后，这个`To`空间将变成`From`
+空间，接下来的内存分配将在这个空间中进行，如果占比过高，会影响后续的内存分配。
+### 写屏障
+上面有一个细节被忽略了：如果新生区中某个对象，只有一个指向它的指针，而这个指针恰好是在老生区的对象当中，我们如何才能知道新生区中那个对象是活跃的呢？显然我们并不希望将老生区再遍历一次，因为老生区中的对象很多，这样做一次消耗太大。  
+为了解决这个问题，实际上在写缓冲区中有一个列表(我们称之为`CrossRefList`),列表中记录了所有老生区对象指向新生区的情况。新对象诞生的时候，并不会有指向它的指针，而当有老生区中的对象出现指向新生区对象的指针时，我们便记录下来这样的跨区指向。由于这种记录行为总是发生在写操作时，它被称为`写屏障`一因为每个写操作都要经历这样一关。
+
+![Alt text](crossref_image.png)
+
+### 老生代
+老生代的内存空间较大且存活对象较多，因此其垃圾回收算法也就没有新生代那么简单了。为此`V8`使用了标记-清除算法(`Mark-Sweep`)进行垃圾回收，并使用标记-压缩算法(`Mark-Compact`)整理内存碎片，提高内存的利用率。老生代的垃圾回收算法步骤如下：  
+> 1.对老生代进行第一遍扫描，标记存活的对象  
+2.对老生代进行第二次扫描，清除未被标记的对象  
+3.将存活对象往内存的一端移动  
+4.清除掉存活对象边界外的内存   
+
+### `Mark-Sweep`
+`Mark-Sweep`是标记清除的意思，它分为两个阶段，标记和清理`Mark-Sweep`在标记阶段遍历堆中的所有对象，并标记活着的对象，在随后的清除阶段中，只清除未被标记的对象。
+
+![Alt text](mark_sweep_image.png)
+
+### 算法机制
+在`标记阶段`，所有堆上的活跃对象都会被标记。每个页(注意，`V8`的内存页是`1MB`的连续内存块，与虚拟内存页不同)都会包含一个用来标记的位图，位图中的每一位对应页中的一字。这个标记非常有必要，因为指针可能会在任何字对齐的地方出现。显然，这样的位图要占据一定的空间(`32`位系统上占据`3.1%`，`64`位系统上占据`1.6%`)，但所有的内存管理机制都需要这样占用，因此这种做法并不过分。除此之外，另有`2`位来表示标记对象的状态。由于对象至少有`2字长`，因此这些位不会重叠。  
+状态一共有三种：如果一个对象的状态为`白`，那么它尚未被垃圾回收器发现；如果一个对象的状态为`灰`，那么它已被垃圾回收器发现，但它的邻接对象仍未全部处理完毕；如果一个对象的状态为`黑`，则它不仅被垃圾回收器发现，而且其所有邻接对象也都处理完毕。  
+如果将堆中的对象看作由指针相互联系的有向图，标记算法的核心实际是`深度优先搜索`。在标记的初期，位图是空的，所有对象也都是白的。从根可达的对象会被染色为灰色，并被放入标记用的一个单独分配的双端队列。标记阶段的每次循环，`GC`会将一个对象从双端队列中取出，染色为黑，然后将它的邻接对象染色为灰，并把邻接对象放入双端队列。这一过程在双端队列为空且所有对象都变黑时结束。  
+特别大的对象，如长数组，可能会在处理时分片，以防湓出双端队列。如果双端队列溢出了，则对象仍然会被染为灰色，但不会再被放入队列(这样他们的邻接对象就没有机会再染色了)。因此当双端队列为空时，`GC`仍然需要扫描一次，确保所有的灰对象都成为了黑对象。对于未被染黑的灰对象，`GC`会将其再次放入队列，再度处理。  
+标记算法结束时，所有的活跃对象都被染为了黑色，而所有的死对象则仍是白的。这一结果正是清理和紧缩两个阶段所期望的。
+`清理阶段`，清理算法扫描连续存放的死对象，将其变为空闲空间，并将其添加到空闲内存链表中。每一页都包含数个空闲内存链表，其分别代表`小内存`(`<256字`)、`中内存区`(`<2048字`)、`大内存区`(`<16384字`)和`超大内存区`（`其它更大的内存`）。  
+清理算法非常简单，只需遍历页的位图，搜索连续的白对象。空闲内存链表大量被`scavenge`算法用于分配存活下来的活跃对象，但也被紧缩算法用于移动对象。有些类型的对象只能被分配在老生区，因此空闲内存链表也被它们使用。
+### Mark-Compact
+`Mark-Sweep`最大的问题是在进行一次标记清除回收后，内存空间会出现不连续的状态。这种内存碎片会对后续的内存分配造成问题，因为很可能出现需要分配一个大对象的情况，这时所有的碎片空间都无法完成此次分配，就会提前触发垃圾回收，而这次回收是不必要的。  
+为了解决`Mark-Sweep`的内存碎片问题，`Mark-Compact`被提出来。`Mark-Compact`是标记整理的意思，是在`Mark-Sweep`的基础上演进而来的。它们的差别在于对象在标记为死亡后，在整理过程中，将活着的对象往一端移动，移动完成后，直接清理掉边界外的内存。
+### 算法机制
+紧缩算法会尝试将对象从碎片页（包含大量小空闲内存的页）中迁移整合在一起，来释放内存。这些对象会被迁移到另外的页上，因此也可能会新分配一些页。而迁出后的碎片页就可以返还给操作系统了。  
+迁移整合的过程非常复杂，大概过程是这样的。对目标碎片页中的每个活跃对象，在空闲内存链表中分配一块其它页的区域，将该对象复制至新页，并在碎片页中的该对象上写上转发地址。迁出过程中，对象中的旧地址会被记录下来，这样在迁出结束后`V8`会遍历它所记录的地址，捋其更新为新的地址。由于标记过程中也记录了不同页之间的指针，此时也会更新这些指针的指向。注意，如果一个页非常“活跃”，比如其中有过多需要记录的指针，则地址记录会跳过它，等到下一轮垃圾回收再进行处理。
